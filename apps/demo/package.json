@@ -1,0 +1,7 @@
+{
+  "name": "agenttx-demo",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Read-only web demo for AgentTx Firewall: paste a Solana transaction, get a security report."
+}

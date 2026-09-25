@@ -1,0 +1,7 @@
+{
+  "action": "swap",
+  "input": "SOL",
+  "output": "USDC",
+  "amount": "0.2",
+  "maximum": "0.5 SOL"
+}

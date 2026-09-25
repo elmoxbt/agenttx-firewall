@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.test-build/
+*.log
+.env
+.agenttx/
+keypair*.json
+id.json

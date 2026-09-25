@@ -1,0 +1,17 @@
+{
+  "name": "agenttx",
+  "private": true,
+  "description": "AgentTx Firewall monorepo: the SDK/CLI package and its live web demo.",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "npm run build --workspace=agenttx-firewall",
+    "test": "npm test --workspace=agenttx-firewall",
+    "typecheck": "npm run typecheck --workspace=agenttx-firewall",
+    "sync-demo": "node scripts/sync-demo-lib.mjs",
+    "test:demo": "node apps/demo/test/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

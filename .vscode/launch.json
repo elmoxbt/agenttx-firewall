@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CLI: inspect malicious-approve",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/firewall/dist/cli.js",
+      "args": ["inspect", "examples/malicious-approve.tx.json", "--policy", "examples/agenttx.policy.json", "--context", "examples/malicious-tool-output.txt"],
+      "cwd": "${workspaceFolder}/packages/firewall",
+      "preLaunchTask": "npm: build (firewall)",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "CLI: inspect jupiter-swap",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/firewall/dist/cli.js",
+      "args": ["inspect", "examples/jupiter-swap.tx.json", "--policy", "examples/agenttx.policy.json"],
+      "cwd": "${workspaceFolder}/packages/firewall",
+      "preLaunchTask": "npm: build (firewall)",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Example: sdk-demo",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/firewall/examples/sdk-demo.mjs",
+      "cwd": "${workspaceFolder}/packages/firewall",
+      "preLaunchTask": "npm: build (firewall)",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Demo: smoke test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/demo/test/smoke.mjs",
+      "preLaunchTask": "npm: sync-demo",
+      "console": "integratedTerminal"
+    }
+  ]
+}

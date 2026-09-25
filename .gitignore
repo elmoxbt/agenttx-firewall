@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.test-build/
+.vercel
+.agenttx/
+*.log
+.env
+keypair*.json
+id.json

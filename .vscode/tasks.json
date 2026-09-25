@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "type": "npm", "script": "build", "group": { "kind": "build", "isDefault": true }, "problemMatcher": "$tsc", "label": "npm: build (firewall)" },
+    { "type": "npm", "script": "test", "group": "test", "problemMatcher": "$tsc", "label": "npm: test (firewall)" },
+    { "type": "npm", "script": "sync-demo", "problemMatcher": "$tsc", "label": "npm: sync-demo" },
+    { "type": "npm", "script": "test:demo", "group": "test", "problemMatcher": [], "label": "npm: test:demo" },
+    { "label": "tsc: watch (firewall)", "type": "shell", "command": "npx tsc -p packages/firewall/tsconfig.build.json --watch", "isBackground": true, "problemMatcher": "$tsc-watch", "group": "build" },
+    { "label": "vercel dev (demo)", "type": "shell", "command": "cd apps/demo && npx vercel dev", "isBackground": true, "problemMatcher": [] }
+  ]
+}

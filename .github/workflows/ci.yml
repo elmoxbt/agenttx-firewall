@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: CLI smoke test (malicious approval must be BLOCKED, exit 1)
+        run: |
+          set +e
+          node packages/firewall/dist/cli.js inspect \
+            packages/firewall/examples/malicious-approve.tx.json \
+            --policy packages/firewall/examples/agenttx.policy.json
+          test $? -eq 1
+      - name: CLI smoke test (clean transfer must be ALLOWED, exit 0)
+        run: |
+          node packages/firewall/dist/cli.js inspect \
+            packages/firewall/examples/transfer-ok.tx.json \
+            --policy packages/firewall/examples/agenttx.policy.json
+
+      - name: Refresh apps/demo/lib and fail if it drifted from packages/firewall
+        run: |
+          npm run sync-demo
+          if ! git diff --quiet -- apps/demo/lib; then
+            echo "::error::apps/demo/lib is out of sync with packages/firewall. Run 'npm run sync-demo' and commit the result."
+            git diff --stat -- apps/demo/lib
+            exit 1
+          fi
+      - name: Demo API smoke test (offline — verifies handler logic, not live network calls)
+        run: npm run test:demo

@@ -1,0 +1,40 @@
+{
+  "name": "agenttx-firewall",
+  "version": "0.1.0",
+  "description": "Open-source security middleware between AI agents and Solana signers: intent-based transaction building, allowlists, simulation and prompt-injection detection.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "agenttx": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "policies",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && node --test \".test-build/test/**/*.test.js\"",
+    "cli": "npm run build && node dist/cli.js",
+    "examples": "npm run build && node examples/generate.mjs",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('.test-build',{recursive:true,force:true})\""
+  },
+  "keywords": ["solana", "ai-agents", "security", "firewall", "prompt-injection", "transaction-simulation"],
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.importModuleSpecifierEnding": "js",
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "search.exclude": { "**/dist": true, "**/.test-build": true, "**/node_modules": true },
+  "files.exclude": { "**/.test-build": true }
+}
