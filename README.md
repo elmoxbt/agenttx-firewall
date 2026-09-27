@@ -1,49 +1,84 @@
 # AgentTx Firewall
 
-A monorepo: the firewall SDK/CLI, and a live web demo of it.
+**Live demo: [agenttxfirewall.vercel.app](https://agenttxfirewall.vercel.app/)**
 
+Security middleware for AI agents holding Solana keys. Agents submit an intent — `transfer` or `swap` — rather than a signed transaction. The firewall builds the transaction independently, decodes whatever any transaction-building tool actually produces, and checks both against policy before signing.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    Agent["AI agent"]
+
+    Agent -->|"intent JSON<br/>(transfer / swap)"| Intent["Intent parser<br/><code>src/intent</code>"]
+    Agent -->|"drives tx-building tool<br/>(builder, or a third-party API — may be poisoned)"| Builder["Builder<br/><code>src/builder.ts</code>, <code>src/jupiter.ts</code>"]
+
+    Builder -->|"unsigned transaction"| Decoder["Transaction decoder<br/><code>src/solana</code>"]
+
+    Intent -->|"expected action + limits"| Checks{"Checks<br/><code>src/checks.ts</code><br/>allowlists · authority escalation<br/>injection scan · intent match"}
+    Decoder -->|"actual instructions"| Checks
+    RPC["RPC simulation<br/>logs / balance delta<br/><code>src/solana</code>"] -.->|optional| Checks
+
+    Checks --> Verdict["ALLOW / REVIEW / BLOCK"]
+    Verdict -->|"ALLOW only"| Signer["Solana signer"]
 ```
-agenttx/
-  packages/
-    firewall/     the real thing — TypeScript SDK, CLI, checks, tests, docs
-  apps/
-    demo/         a thin read-only web UI deployed on Vercel (free tier)
-  scripts/
-    sync-demo-lib.mjs   rebuilds packages/firewall and refreshes apps/demo's copy of it
-```
 
-**[packages/firewall](packages/firewall/README.md)** is the project: intent-based transaction building, program/instruction/destination/amount allowlists, authority-escalation and prompt-injection detection, simulation, a CLI, and a full offline test suite. This is what you'd publish, embed in an agent framework, or extend with new checks.
+The agent never receives a generic `sendTransaction`. Zero runtime dependencies.
 
-**[apps/demo](apps/demo/README.md)** is a two-pane web page — paste a transaction or an agent intent, see the security report render live. It has no logic of its own: it imports a compiled snapshot of `packages/firewall`, kept in sync by `scripts/sync-demo-lib.mjs`. It's a way to show the firewall working without asking anyone to clone a repo.
-
-## Getting started
+## Installation
 
 ```bash
-npm install                # installs both workspaces at once
-npm run build               # builds packages/firewall
-npm test                    # runs packages/firewall's test suite
-npm run sync-demo           # rebuilds the firewall and refreshes apps/demo/lib
-npm run test:demo           # smoke-tests the demo's serverless function (no network needed)
+npm install
+npm run build
 ```
 
-Then, to actually deploy the demo:
+## CLI
+
 ```bash
-cd apps/demo
-vercel --prod
+node dist/cli.js inspect transaction.json --policy policy.json
 ```
-See [apps/demo/README.md](apps/demo/README.md) for the free-tier deploy walkthrough.
 
-## Why one repo
+Produces a security report and exits `0` (ALLOW), `1` (BLOCK), or `2` (REVIEW). `--json` returns machine-readable output.
 
-The demo has no independent existence — it only shows what the firewall does. Keeping them together means one `git push`, one CI run, and a scripted sync step (`npm run sync-demo`) instead of manually copying compiled files between two repos and hoping you remembered to.
+## SDK
 
-## Workflow when you change the firewall
+```ts
+import { AgentTxFirewall, JupiterSwapProvider, KeypairSigner } from "agenttx-firewall";
 
-1. Edit `packages/firewall/src/**`.
-2. `npm test` (from the root, or `-w agenttx-firewall`) to confirm nothing broke.
-3. `npm run sync-demo` to rebuild and refresh `apps/demo/lib/agenttx-firewall`.
-4. `npm run test:demo` to confirm the demo's API still behaves as expected.
-5. Commit — `git status` will show the refreshed `apps/demo/lib` files alongside your source change, so they land in the same commit.
-6. Push. Vercel redeploys the demo automatically if it's connected to this repo (see the demo README for one-time setup); otherwise redeploy manually with `vercel --prod`.
+const signer = KeypairSigner.fromFile("./agent-keypair.json");
+const firewall = new AgentTxFirewall({
+  policy: {
+    signer: signer.publicKey,
+    destinations: { allow: [{ address: "<treasury>" }] },
+    limits: { maxSolPerTx: "0.5", maxSolPerDay: "2" },
+  },
+  rpc: "mainnet",
+  signer,
+  swapProvider: new JupiterSwapProvider(),
+});
 
-CI (`.github/workflows/ci.yml`) runs steps 2–4 on every push and fails if `apps/demo/lib` is out of sync with `packages/firewall/src` — so a forgotten `sync-demo` gets caught before merge, not after deploy.
+const result = await firewall.execute(intent, { untrusted: toolOutput, trusted: userMessage });
+```
+
+`evaluateIntent()` builds and inspects without signing. `execute()` signs and sends on `ALLOW` only. `inspect(tx)` checks any raw transaction. `guard()` wraps an existing signer so it can only be used through the firewall.
+
+## What is checked
+
+| Check | Blocks when |
+|---|---|
+| Program / instruction allowlist | targets a program or instruction not in policy |
+| Authority escalation | `approve`, `set_authority`, unlimited approvals |
+| Destination / token allowlist | recipient or mint not in policy |
+| Amount / slippage / priority fee | above configured limits |
+| Matches declared intent | transaction does more than the intent said |
+| Prompt-injection scan | untrusted text contains wallet-targeted instructions |
+| Destination provenance | a non-allowlisted address appears only in untrusted content |
+| Simulation | simulation error, dangerous CPI, balance drop above limit |
+
+## Status
+
+MVP, not audited. Live network paths (RPC, Jupiter) are covered by mocked tests, not live traffic. Static analysis sees top-level instructions only; injection detection is pattern-based, not a substitute for allowlists and intent-matching.
+
+## License
+
+MIT
